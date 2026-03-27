@@ -1,13 +1,12 @@
 {
-  "domain": "prana_recuperator",
-  "name": "Prana Recuperator",
+  "domain": "ha_prana_vmc",
+  "name": "HA Prana VMC",
+  "version": "1.0.0",
+  "documentation": "https://github.com/Kikk0s/HA-Prana-VMC",
+  "issue_tracker": "https://github.com/Kikk0s/HA-Prana-VMC/issues",
   "codeowners": [],
   "config_flow": true,
-  "dependencies": [],
-  "documentation": "https://github.com/your-repo/prana_recuperator",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/your-repo/prana_recuperator/issues",
-  "requirements": ["aiohttp>=3.8.0"],
-  "version": "1.0.0",
-  "zeroconf": ["_prana._tcp.local."]
+  "integration_type": "hub",
+  "requirements": []
 }
