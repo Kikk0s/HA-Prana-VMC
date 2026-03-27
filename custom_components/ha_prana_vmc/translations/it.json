@@ -1,0 +1,131 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Prana Recuperator",
+        "description": "Configura il dispositivo Prana Recuperator",
+        "data": {
+          "host": "Host (Indirizzo IP)",
+          "name": "Nome dispositivo"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Prana Recuperator rilevato",
+        "description": "È stato rilevato un dispositivo Prana Recuperator all'indirizzo {host}.\n\nVuoi configurare questo dispositivo?",
+        "data": {
+          "name": "Nome dispositivo"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile connettersi al dispositivo. Controlla l'indirizzo IP e verifica che il dispositivo sia acceso.",
+      "unknown": "Si è verificato un errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo dispositivo è già configurato.",
+      "cannot_connect": "Impossibile connettersi al dispositivo rilevato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni Prana Recuperator",
+        "data": {
+          "name": "Nome dispositivo"
+        }
+      }
+    }
+  },
+  "entity": {
+    "switch": {
+      "bound": {
+        "name": "Modalità Bound"
+      },
+      "heater": {
+        "name": "Riscaldatore"
+      },
+      "winter": {
+        "name": "Modalità Inverno"
+      },
+      "auto": {
+        "name": "Modalità Auto"
+      },
+      "auto_plus": {
+        "name": "Modalità Auto+"
+      },
+      "night": {
+        "name": "Modalità Notte"
+      },
+      "boost": {
+        "name": "Modalità Boost"
+      },
+      "power_on": {
+        "name": "Alimentazione"
+      }
+    },
+    "sensor": {
+      "inside_temperature": {
+        "name": "Temperatura interna"
+      },
+      "inside_temperature_2": {
+        "name": "Temperatura interna 2"
+      },
+      "outside_temperature": {
+        "name": "Temperatura esterna"
+      },
+      "outside_temperature_2": {
+        "name": "Temperatura esterna 2"
+      },
+      "humidity": {
+        "name": "Umidità"
+      },
+      "co2": {
+        "name": "CO₂"
+      },
+      "voc": {
+        "name": "VOC"
+      },
+      "air_pressure": {
+        "name": "Pressione atmosferica"
+      },
+      "extract_speed": {
+        "name": "Velocità estrazione"
+      },
+      "supply_speed": {
+        "name": "Velocità immissione"
+      },
+      "bounded_speed": {
+        "name": "Velocità recuperatore"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Luminosità display"
+      },
+      "supply_speed_control": {
+        "name": "Velocità ventola immissione"
+      },
+      "extract_speed_control": {
+        "name": "Velocità ventola estrazione"
+      },
+      "bounded_speed_control": {
+        "name": "Velocità recuperatore"
+      }
+    },
+    "climate": {
+      "prana_climate": {
+        "name": "Clima",
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "night": "Notte",
+              "boost": "Boost",
+              "auto": "Automatico",
+              "auto_plus": "Automatico+"
+            }
+          }
+        }
+      }
+    }
+  }
+}
