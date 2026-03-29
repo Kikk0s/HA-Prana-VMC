@@ -1,4 +1,4 @@
-# Prana VMC (Local WiFi) — Custom Integration per Home Assistant
+# Prana VMC — Integrazione per Home Assistant
 
 Integrazione **custom** per Home Assistant per controllare i recuperatori **Prana** tramite **API locale su Wi-Fi** (senza cloud).
 
