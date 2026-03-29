@@ -1,6 +1,6 @@
 {
-  "name": "HA Prana VMC",
+  "name": "Prana VMC",
   "render_readme": true,
-  "domains": ["ha_prana_vmc"],
+  "domains": ["prana_vmc"],
   "homeassistant": "2024.1.0"
 }
