@@ -4,7 +4,7 @@ Integrazione **custom** per Home Assistant per controllare i recuperatori **Pran
 
 > ✅ Questo progetto è basato sull’integrazione originale di dCode91:  
 > https://github.com/dCode91/ha-prana-local-wifi  
-> Grazie a dCode91 per il lavoro iniziale 🙏
+> Grazie a dCode91 🙏
 
 ---
 
