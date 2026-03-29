@@ -7,11 +7,11 @@
           "preset_mode": {
             "default": "mdi:tune",
             "state": {
-              "manual": "mdi:hand",
-              "none": "mdi:hand",
-              "off": "mdi:hand",
-              "Manual": "mdi:hand",
-              "MANUAL": "mdi:hand",
+              "manual": "mdi:hand-back-left",
+              "none": "mdi:hand-back-left",
+              "off": "mdi:hand-back-left",
+              "Manual": "mdi:hand-back-left",
+              "MANUAL": "mdi:hand-back-left",
               "auto": "mdi:fan-auto",
               "auto_plus": "mdi:fan-plus",
               "night": "mdi:weather-night",
