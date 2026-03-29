@@ -62,7 +62,7 @@
     },
     "sensor": {
       "inside_temperature": {
-        "name": "Temperatura interna"
+        "name": "Temperatura interna - estrazione dell'aria"
       },
       "inside_temperature_2": {
         "name": "Temperatura interna 2"
@@ -71,10 +71,10 @@
         "name": "Temperatura esterna"
       },
       "outside_temperature_2": {
-        "name": "Temperatura esterna 2"
+        "name": "Temperatura esterna - immmissione dell'aria"
       },
       "humidity": {
-        "name": "Umidità"
+        "name": "Umidità relativa"
       },
       "co2": {
         "name": "CO₂"
