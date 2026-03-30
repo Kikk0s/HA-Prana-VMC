@@ -47,7 +47,7 @@ class PranaState:
     boost: bool = False
 
     # Display
-    brightness: int = 6
+    brightness: int = 32
 
     # Sensors (optional)
     inside_temperature: float | None = None
@@ -140,6 +140,15 @@ class PranaState:
             elif bound and bounded_speed_raw == 10:
                 night_effective = True
 
+        # Brightness:
+        # The API should return a raw value (0, 1, 2, 4, 8, 16, 32).
+        # IMPORTANT: do NOT coerce 0 to a default (it causes the HA UI to snap back).
+        brightness_val = data.get("brightness", 32)
+        try:
+            brightness_raw = int(brightness_val) if brightness_val is not None else 32
+        except (TypeError, ValueError):
+            brightness_raw = 32
+
         return cls(
             extract_speed=normalize_speed(extract_data.get("speed", 0)),
             extract_is_on=parse_bool(extract_data.get("is_on", False)),
@@ -157,7 +166,7 @@ class PranaState:
             winter=parse_bool(data.get("winter", False)),
             night=night_effective,
             boost=parse_bool(data.get("boost", False)),
-            brightness=int(data.get("brightness", 6) or 6),
+            brightness=brightness_raw,
             inside_temperature=parse_temperature(data.get("inside_temperature")),
             inside_temperature_2=parse_temperature(data.get("inside_temperature_2")),
             outside_temperature=parse_temperature(data.get("outside_temperature")),
