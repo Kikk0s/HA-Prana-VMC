@@ -62,44 +62,37 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
         self._saved_speed_state: dict[str, Any] = {}
         self._last_set_brightness: int | None = None
 
-
     def _set_pending(self, patch: dict[str, Any]) -> None:
         """Store an optimistic patch for a short window and push it to listeners immediately."""
         if not patch:
             return
 
-        # Merge patches (multiple rapid commands)
         self._pending_patch.update(patch)
         self._pending_until = time.monotonic() + PENDING_WINDOW
 
-        # Push to listeners now (keeps UI from snapping back)
         if self.data is not None:
             try:
                 updated = replace(self.data, **patch)
             except TypeError:
-                # In case HA changes coordinator typing, fallback
                 updated = self.data
                 for k, v in patch.items():
                     setattr(updated, k, v)
-            # DataUpdateCoordinator provides this helper in modern HA
+
             if hasattr(self, "async_set_updated_data"):
                 self.async_set_updated_data(updated)  # type: ignore[attr-defined]
             else:
                 self.data = updated
                 self.async_update_listeners()
 
-
     def _apply_pending_to_fetched(self, state: PranaState) -> PranaState:
         """If we have a pending patch and the device still reports old state, keep UI stable."""
-        # Apply pending patch if active
         if self._pending_patch and time.monotonic() < self._pending_until:
-            # If device now matches, clear pending
             all_match = True
             for k, v in self._pending_patch.items():
                 if getattr(state, k, None) != v:
                     all_match = False
                     break
-    
+
             if all_match:
                 self._pending_patch.clear()
             else:
@@ -109,18 +102,15 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                     for k, v in self._pending_patch.items():
                         setattr(state, k, v)
         else:
-            # Expired
             self._pending_patch.clear()
-    
+
         # Brightness "sticky" workaround:
         # Some devices always report brightness as 0 in /getState even when it's not.
         if self._last_set_brightness is not None:
             fetched_brightness = getattr(state, "brightness", None)
             if fetched_brightness not in (None, 0):
-                # Device reports a real value -> trust it
                 self._last_set_brightness = int(fetched_brightness)
             else:
-                # Treat 0 as unreliable only while the unit is running
                 any_fan_on = bool(
                     getattr(state, "bounded_is_on", False)
                     or getattr(state, "supply_is_on", False)
@@ -131,7 +121,7 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                         state = replace(state, brightness=self._last_set_brightness)
                     except TypeError:
                         setattr(state, "brightness", self._last_set_brightness)
-    
+
         return state
 
     def _save_current_speeds(self, current_state: PranaState) -> None:
@@ -182,7 +172,7 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
     ) -> None:
         """Execute a command with retry logic."""
         last_error = None
-        
+
         for attempt in range(MAX_RETRIES):
             try:
                 await command_func(*args, **kwargs)
@@ -197,34 +187,23 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                 )
                 if attempt < MAX_RETRIES - 1:
                     await asyncio.sleep(RETRY_DELAY)
-        
+
         raise last_error
 
     async def _refresh_after_command(self) -> None:
-        """Refresh data after a command with a small delay.
-
-        Some Prana firmwares can report stale /getState for ~1-3 seconds after a change.
-        We refresh a few times and keep optimistic values for PENDING_WINDOW seconds.
-        """
+        """Refresh data after a command with a small delay."""
         for delay in (POST_COMMAND_DELAY, 1.0, 2.0):
             await asyncio.sleep(delay)
             await self.async_refresh()
-            # If pending patch is cleared (device confirmed), stop early
             if not self._pending_patch:
                 return
 
-
     async def async_power_off(self) -> None:
-        """Turn the unit off (best effort).
-
-        Some modes (AUTO/AUTO+/NIGHT/BOOST/WINTER/HEATER) can keep fans running.
-        We disable them and then turn off all fans.
-        """
+        """Turn the unit off (best effort)."""
         async with self._command_lock:
             try:
                 current_state = await self.api.get_state()
 
-                # Optimistic UI update (prevents the card from snapping back)
                 patch: dict[str, Any] = {
                     "auto": False,
                     "auto_plus": False,
@@ -241,12 +220,10 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                 }
                 self._set_pending(patch)
 
-                # Disable modes first
                 for sw in ("auto", "auto_plus", "night", "boost", "winter", "heater"):
                     if getattr(current_state, sw, False):
                         await self._execute_command_with_retry(self.api.set_switch, sw, False)
 
-                # Turn off all fans (bounded + separate fans)
                 for ft in ("bounded", "supply", "extract"):
                     await self._execute_command_with_retry(self.api.set_speed_is_on, False, ft)
                     await self._execute_command_with_retry(self.api.set_speed, 0, ft)
@@ -279,15 +256,12 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                 else:
                     patch = {"bounded_speed": speed, "bounded_is_on": speed > 0}
 
-                # Optimistic UI update (prevents snapping back)
                 self._set_pending(patch)
 
                 await self._execute_command_with_retry(self.api.set_speed, speed, fan_type)
 
-                # Some firmwares require an explicit "on" when changing speed from 0
                 if speed > 0 and not current_state.is_fan_on(fan_type):
                     await self._execute_command_with_retry(self.api.set_speed_is_on, True, fan_type)
-                    # Keep patch consistent
                     if fan_type == "supply":
                         self._set_pending({"supply_is_on": True})
                     elif fan_type == "extract":
@@ -333,7 +307,6 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
 
                 await self._execute_command_with_retry(self.api.set_speed_is_on, value, fan_type)
 
-                # If turning off, many firmwares also set speed to 0 (keep HA consistent)
                 if not value:
                     await self._execute_command_with_retry(self.api.set_speed, 0, fan_type)
 
@@ -350,8 +323,8 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
 
         Implements extra behavior to match Prana app logic:
         - AUTO / AUTO+ cannot coexist with NIGHT
-        - NIGHT means both fans at level 1 with AUTO/AUTO+ off
-        - BOOST sets speed to max (6) and disables AUTO/AUTO+/NIGHT
+        - NIGHT lets the device manage night mode internally
+        - BOOST sets speed to max (60) and disables AUTO/AUTO+/NIGHT
         - When disabling NIGHT/BOOST we restore previous speeds (best effort)
         """
         async with self._command_lock:
@@ -366,17 +339,16 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
 
                 patch: dict[str, Any] = {}
                 commands: list[tuple] = []
+                restore_saved_after = False
 
-                # Helpers
                 def disable_modes_if_needed(modes: list[str]) -> None:
                     for m in modes:
                         if getattr(current_state, m, False):
                             commands.append((self.api.set_switch, m, False))
                             patch[m] = False
 
-                # 1) AUTO / AUTO+ ON => force NIGHT OFF
+                # 1) AUTO / AUTO+ ON => force NIGHT/BOOST OFF
                 if switch_type in ("auto", "auto_plus") and value:
-                    # If NIGHT/BOOST were active, disable them
                     if getattr(current_state, "night", False):
                         commands.append((self.api.set_switch, "night", False))
                         patch["night"] = False
@@ -390,50 +362,30 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                 # 2) NIGHT mode
                 elif switch_type == "night":
                     if value:
-                        # Save current speeds so we can restore when NIGHT is disabled
                         self._save_current_speeds(current_state)
 
-                        # Disable AUTO/AUTO+/BOOST first
+                        # Disable incompatible modes first
                         disable_modes_if_needed(["auto", "auto_plus", "boost"])
 
-                        # Set fans to level 1
-                        if current_state.bound:
-                            commands.append((self.api.set_speed, 10, "bounded"))
-                            commands.append((self.api.set_speed_is_on, True, "bounded"))
-                            patch.update({"bounded_speed": 10, "bounded_is_on": True})
-                        else:
-                            for ft in ("supply", "extract"):
-                                commands.append((self.api.set_speed, 10, ft))
-                                commands.append((self.api.set_speed_is_on, True, ft))
-                            patch.update(
-                                {
-                                    "supply_speed": 10,
-                                    "supply_is_on": True,
-                                    "extract_speed": 10,
-                                    "extract_is_on": True,
-                                }
-                            )
-
-                        # Some firmwares also have a night switch; set it as well
+                        # IMPORTANT:
+                        # Let the device handle NIGHT internally.
+                        # Do not send explicit speed changes here, otherwise some
+                        # firmwares briefly ramp the fans before night mode settles.
                         commands.append((self.api.set_switch, "night", True))
                         patch["night"] = True
                     else:
-                        # Disable the switch and restore previous speeds (so NIGHT no longer matches)
                         commands.append((self.api.set_switch, "night", False))
                         patch["night"] = False
-
-                        # Restore previous speeds (best effort)
-                        await self._restore_saved_speeds()
+                        restore_saved_after = True
 
                 # 3) BOOST mode
                 elif switch_type == "boost":
                     if value:
                         self._save_current_speeds(current_state)
 
-                        # Disable AUTO/AUTO+/NIGHT first
                         disable_modes_if_needed(["auto", "auto_plus", "night"])
 
-                        # Max speed (6)
+                        # Max speed (60)
                         if current_state.bound:
                             commands.append((self.api.set_speed, 60, "bounded"))
                             commands.append((self.api.set_speed_is_on, True, "bounded"))
@@ -456,20 +408,21 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                     else:
                         commands.append((self.api.set_switch, "boost", False))
                         patch["boost"] = False
-                        await self._restore_saved_speeds()
+                        restore_saved_after = True
 
                 # 4) Other switches: heater / winter / bound / etc.
                 else:
                     commands.append((self.api.set_switch, switch_type, value))
                     patch[switch_type] = value
 
-                # Push optimistic patch immediately
                 self._set_pending(patch)
 
-                # Execute all commands
                 for cmd in commands:
                     func, *args = cmd
                     await self._execute_command_with_retry(func, *args)
+
+                if restore_saved_after:
+                    await self._restore_saved_speeds()
 
                 await self._refresh_after_command()
 
@@ -491,11 +444,9 @@ class PranaCoordinator(DataUpdateCoordinator[PranaState]):
                 )
 
                 self._last_set_brightness = brightness
-
                 self._set_pending({"brightness": brightness})
 
                 await self._execute_command_with_retry(self.api.set_brightness, brightness)
-
                 await self._refresh_after_command()
 
             except PranaApiError as err:

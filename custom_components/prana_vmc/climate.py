@@ -238,11 +238,16 @@ class PranaRecuperatorClimate(PranaEntity, ClimateEntity):
         if preset_mode not in PRESET_MODES:
             raise ValueError(f"Unsupported preset mode: {preset_mode}")
 
-        if self.hvac_mode == HVACMode.OFF:
-            await self.async_set_hvac_mode(HVACMode.FAN_ONLY)
+        # IMPORTANT:
+        # Do not force an intermediate FAN_ONLY step before applying presets.
+        # On some Prana firmwares that extra transition can cause a brief
+        # full-speed spin-up before the requested preset is actually engaged.
+        # We only ensure bound mode here; the preset handler itself will turn
+        # the appropriate fans on as needed.
+        await self._ensure_bound_mode()
 
         if preset_mode == PRESET_MANUAL:
-            # IMPORTANT: do NOT touch winter/heater here (they may be enabled automatically)
+            # IMPORTANT: do NOT touch winter/heater here
             for sw in (
                 SWITCH_TYPE_BOOST,
                 SWITCH_TYPE_NIGHT,
